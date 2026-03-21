@@ -59,8 +59,8 @@
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
 Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090
 
-![скриншот тестов](docs/images/events-tests.png)
-![скриншот топиков](docs/images/kafka-topics.png)
+![скриншот тестов](docs/images/test_result.png)
+![скриншот топиков](docs/images/kafka_ui.png)
 
 
 ## Задание 3
@@ -273,6 +273,9 @@ cat .docker/config.json | base64
   ```
   Часть тестов с health-чек упадет, но создание событий отработает.
   Откройте логи event-service и сделайте скриншот обработки событий
+
+  ![скриншот логов](docs/images/event_service_log.png)
+  ![скриншот тестов](docs/images/api_movies.png)
 
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
