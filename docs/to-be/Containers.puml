@@ -1,0 +1,93 @@
+@startuml Кинобездна containers diagram
+
+title Кинобездна Containers Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(User, "User", "Пользователь, который может использовать ноутбук, смарт тв, мобильные устройства")
+
+System_Ext(Recommendations, "Система рекомендаций")
+System_Ext(PaymentsExt, "Платежная система")
+
+System_Boundary(Frontend, "Frontend") {
+  Container(WebApp, "Web App", "React", "Веб-приложение для доступа к онлайн кинотеатру")
+  Container(MobileApp, "Mobile App", "iOS/Android", "Мобильное приложение для доступа к онлайн кинотеатру")
+  Container(TVApp, "TV App", "Smart TV", "Приложение для смарт тв для доступа к онлайн кинотеатру")
+}
+
+System_Boundary(API, "API") {
+  Container(APIService, "API Gateway", "nginx, kong", "Сервис распределяющий запросы между различными сервисами")
+}
+
+System_Boundary(Payments, "Обработка платежей") {
+  Container(PaymentService, "Payment Service", "Go", "Сервис для обработки оплаты")
+  Container(SubscriptionService, "Subscription Service", "Go", "Сервис для управления подпиской")
+  ContainerDb(PaymentDB, "Payment Database", "PostgreSQL", "База данных для хранения информации о платежах")
+}
+
+System_Boundary(Streaming, "Онлайн кинотеатр") {
+  Container(StreamingService, "Streaming Service", "Go", "Сервис для обработки запросов на просмотр фильмов")
+  ContainerDb(ContentDB, "Content bucket", "S3", "Storage для хранения контента")
+}
+
+System_Boundary(Metadata, "Метаданные") {
+  Container(MetadataCommandService, "Metadata Command Service", "Go", "Сервис для обработки команд для метаданные")
+  Container(MetadataQueryService, "Metadata Query Service", "Go", "Сервис для получения метаданных")
+  Container(MetadataBroker, "Metadata Broker", "Kafka", "Брокер сообщений для обмена данными между сервисами метаданных")
+  ContainerDb(MetadataDB, "Metadata Database", "PostgreSQL", "База данных для хранения информации о фильмах")
+}
+
+System_Boundary(Pricing, "Управление ценами и скидками") {
+  Container(PricingService, "Pricing Service", "Go", "Сервис для управления ценами и скидками")
+  ContainerDb(PricingDB, "Pricing Database", "PostgreSQL", "База данных для хранения информации о ценах и скидках")
+}
+
+
+System_Boundary(MessageBroker, "Message Broker") {
+  Container(MessageBrokerService, "Message Broker", "Kafka", "Брокер сообщений для обмена данными между сервисами")
+}
+
+System_Boundary(RecommendationsSystem, "Система рекомендаций") {
+  Container(RecommendationsService, "Recommendations Service", "Go", "Сервис для получения рекомендаций")
+  ContainerDb(RecommendationsDB, "DB Cache", "Redis", "База данных для хранения информации о рекомендациях")
+}
+
+Rel(User, WebApp, "Использует")
+Rel(User, MobileApp, "Использует")
+Rel(User, TVApp, "Использует")
+
+Rel(WebApp, APIService, "Запрос", "JSON/HTTPS")
+Rel(MobileApp, APIService, "Запрос", "JSON/HTTPS")
+Rel(TVApp, APIService, "Запрос", "JSON/HTTPS")
+
+Rel(APIService, SubscriptionService, "Запрос на оплату/отмену подписки", "JSON/HTTPS")
+Rel(APIService, StreamingService, "Запрос на получение контента", "JSON/HTTPS")
+Rel(APIService, MetadataQueryService, "Чтение метаданных", "JSON/HTTPS")
+Rel(APIService, PricingService, "Запрос на получение цен и скидок", "JSON/HTTPS")
+Rel(APIService, MessageBrokerService, "Публикация событий о новых данных", "Kafka")
+
+Rel(SubscriptionService, PaymentService, "Запрос на обработку платежа", "gRPC")
+Rel(PaymentService, MessageBrokerService, "Публикация событий о платежах/транзацкциях/логах", "Kafka")
+Rel(PaymentService, PaymentDB, "Чтение/запись данных о платежах", "SQL")
+Rel(PaymentService, PaymentsExt, "Запрос на обработку платежа", "JSON/HTTPS")
+
+Rel(MessageBrokerService, PaymentService, "Запись новых данных")
+Rel(MessageBrokerService, MetadataCommandService, "Публикация новых данных")
+Rel(MessageBrokerService, PricingService, "Запись новых данных")
+Rel(MessageBrokerService, RecommendationsService, "Публикация новых данных")
+
+Rel(StreamingService, ContentDB, "Запрос на получение контента", "S3 API")
+
+Rel(MetadataQueryService, MetadataDB, "Запрос на получение данных", "SQL")
+Rel(MetadataCommandService, MetadataBroker, "Запись новых данных", "Kafka")
+Rel(MetadataBroker, MetadataQueryService, "Публикация событий о новых данных", "Kafka")
+
+Rel(PricingService, MessageBrokerService, "Обновление цен и скидок", "Kafka")
+Rel(PricingService, PricingDB, "Чтение данных", "SQL")
+
+Rel(Recommendations, MessageBrokerService, "Публикация событий о новых данных", "Kafka")
+BiRel(RecommendationsService, RecommendationsDB, "Запись/получение новых данных")
+
+@enduml

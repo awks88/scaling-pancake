@@ -10,10 +10,6 @@ spec:
   ports:
   - port: 2181
     name: client
-  - port: 2888
-    name: server
-  - port: 3888
-    name: leader-election
   selector:
     app: zookeeper
 ---
@@ -47,14 +43,10 @@ spec:
     spec:
       containers:
       - name: zookeeper
-        image: wurstmeister/zookeeper
+        image: bitnamilegacy/zookeeper:latest
         ports:
         - containerPort: 2181
           name: client
-        - containerPort: 2888
-          name: server
-        - containerPort: 3888
-          name: leader-election
         resources:
           requests:
             memory: "256Mi"
@@ -63,13 +55,15 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         env:
-        - name: ZOOKEEPER_CLIENT_PORT
+        - name: ALLOW_ANONYMOUS_LOGIN
+          value: "yes"
+        - name: ZOO_PORT_NUMBER
           value: "2181"
-        - name: ZOOKEEPER_TICK_TIME
+        - name: ZOO_TICK_TIME
           value: "2000"
         volumeMounts:
         - name: zookeeper-data
-          mountPath: /var/lib/zookeeper/data
+          mountPath: /bitnami/zookeeper
         readinessProbe:
           tcpSocket:
             port: 2181
@@ -129,7 +123,7 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: wurstmeister/kafka:2.13-2.7.0
+        image: bitnamilegacy/kafka:3.3
         ports:
         - containerPort: 9092
           name: kafka
@@ -141,25 +135,21 @@ spec:
             memory: "1Gi"
             cpu: "1000m"
         env:
-        - name: KAFKA_ADVERTISED_LISTENERS
-          value: PLAINTEXT://kafka:9092
-        - name: KAFKA_LISTENERS
-          value: PLAINTEXT://0.0.0.0:9092
-        - name: KAFKA_PORT
-          value: "9092"
-        - name: KAFKA_ZOOKEEPER_CONNECT
+        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
           value: zookeeper:2181
-        - name: KAFKA_CREATE_TOPICS
-          value: "movie-events:1:1,user-events:1:1,payment-events:1:1"
-        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+        - name: KAFKA_CFG_LISTENERS
+          value: "PLAINTEXT://:9092"
+        - name: KAFKA_CFG_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka:9092"
+        - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
           value: "true"
-        - name: KAFKA_BROKER_ID
+        - name: KAFKA_CFG_BROKER_ID
           value: "1"
-        - name: KAFKA_LOG_DIRS
-          value: "/kafka/kafka-logs"
+        - name: ALLOW_PLAINTEXT_LISTENER
+          value: "yes"
         volumeMounts:
         - name: kafka-data
-          mountPath: /kafka
+          mountPath: /bitnami/kafka
         readinessProbe:
           tcpSocket:
             port: 9092
